@@ -8,6 +8,7 @@ from telegram.ext import (
 )
 
 TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_ID = 7438564292  # آیدی عددی ادمین
 
 # State برای ConversationHandler
 WAITING_FOR_CODE = 1
@@ -25,8 +26,10 @@ async def start(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "👋 سلام! خوش اومدی به ربات ما 🤖\n\nلطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
-        reply_markup=reply_markup
+        "✨ <b>سلام! خوش اومدی به ربات ما</b> ✨\n\n"
+        "🤖 لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
     )
 
 async def show_buy_voucher_menu(update: Update, context):
@@ -48,11 +51,13 @@ async def show_buy_voucher_menu(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "💳 *خرید ووچر*\n\n"
-        "موجودی کیف پول شما : *0 تومان*\n\n"
-        "⚠️ شما باید از طریق افزایش موجودی حساب خود را شارژ کنید",
+        "💳 <b>خرید ووچر</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>موجودی کیف پول شما:</b> <code>0 تومان</code>\n\n"
+        "⚠️ <i>شما باید از طریق افزایش موجودی حساب خود را شارژ کنید</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
 async def show_insufficient_balance(update: Update, context):
@@ -74,11 +79,13 @@ async def show_insufficient_balance(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "💳 *خرید ووچر*\n\n"
-        "موجودی کیف پول شما : *0 تومان*\n\n"
-        "⚠️ شما باید از طریق افزایش موجودی حساب خود را شارژ کنید",
+        "💳 <b>خرید ووچر</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>موجودی کیف پول شما:</b> <code>0 تومان</code>\n\n"
+        "⚠️ <i>شما باید از طریق افزایش موجودی حساب خود را شارژ کنید</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
 async def back_to_main(update: Update, context):
@@ -96,8 +103,10 @@ async def back_to_main(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "👋 سلام! خوش اومدی به ربات ما 🤖\n\nلطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
-        reply_markup=reply_markup
+        "✨ <b>سلام! خوش اومدی به ربات ما</b> ✨\n\n"
+        "🤖 لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
     )
 
 # --- دکمه دوم: تبدیل ووچر ---
@@ -114,9 +123,12 @@ async def convert_voucher_menu(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "🔄 *تبدیل ووچر*\n\nنوع تبدیل مد نظر را انتخاب نمایید:",
+        "🔄 <b>تبدیل ووچر</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "📋 <i>نوع تبدیل مد نظر را انتخاب نمایید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     return ConversationHandler.END
 
@@ -131,13 +143,15 @@ async def u_to_hot(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "🔄 *تبدیل یووچر به هات ووچر*\n\n"
-        "موجودی هات ووچر ربات:\n"
-        "248.000 دلار\n\n"
-        "تبدیل شما در کمتر از چند دقیقه انجام میشود\n"
-        "کد یووچر خود را وارد نمایید:",
+        "🔄 <b>تبدیل یووچر به هات ووچر</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>موجودی هات ووچر ربات:</b>\n"
+        "<code>248.000 دلار</code>\n\n"
+        "⚡ <i>تبدیل شما در کمتر از چند دقیقه انجام میشود</i>\n\n"
+        "🔑 <b>کد یووچر خود را وارد نمایید:</b>\n"
+        "━━━━━━━━━━━━━━━━━━",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     
     context.user_data['conversion_type'] = 'u_to_hot'
@@ -154,13 +168,15 @@ async def u_to_ps(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "🔄 *تبدیل یووچر به پی اس ووچر*\n\n"
-        "موجودی پی اس ووچر ربات:\n"
-        "187.000 دلار\n\n"
-        "تبدیل شما در کمتر از چند دقیقه انجام میشود\n"
-        "کد یووچر خود را وارد نمایید:",
+        "🔄 <b>تبدیل یووچر به پی اس ووچر</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>موجودی پی اس ووچر ربات:</b>\n"
+        "<code>187.000 دلار</code>\n\n"
+        "⚡ <i>تبدیل شما در کمتر از چند دقیقه انجام میشود</i>\n\n"
+        "🔑 <b>کد یووچر خود را وارد نمایید:</b>\n"
+        "━━━━━━━━━━━━━━━━━━",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     
     context.user_data['conversion_type'] = 'u_to_ps'
@@ -179,26 +195,59 @@ async def back_to_convert(update: Update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        "🔄 *تبدیل ووچر*\n\nنوع تبدیل مد نظر را انتخاب نمایید:",
+        "🔄 <b>تبدیل ووچر</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "📋 <i>نوع تبدیل مد نظر را انتخاب نمایید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     return ConversationHandler.END
 
 async def receive_voucher_code(update: Update, context):
     code = update.message.text
+    user = update.message.from_user
+    conversion_type = context.user_data.get('conversion_type', 'unknown')
     
+    # نمایش پیام تأیید به کاربر
     await update.message.reply_text(
-        "✅ *درخواست بررسی کد ووچر شما انجام شد.*\n\n"
-        "پس از بررسی صحت کد یووچر تبدیل شما انجام خواهد شد",
-        parse_mode="Markdown"
+        "✅ <b>درخواست بررسی کد ووچر شما انجام شد.</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "⏳ <i>پس از بررسی صحت کد یووچر تبدیل شما انجام خواهد شد</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        parse_mode="HTML"
     )
+    
+    # ارسال اطلاعات به ادمین
+    conversion_text = {
+        'u_to_hot': 'یووچر ➡️ هات ووچر',
+        'u_to_ps': 'یووچر ➡️ پی اس ووچر'
+    }.get(conversion_type, 'نامشخص')
+    
+    admin_message = (
+        "🔔 <b>درخواست تبدیل ووچر جدید</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>کاربر:</b> {user.full_name}\n"
+        f"🆔 <b>آیدی عددی:</b> <code>{user.id}</code>\n"
+        f"🔄 <b>نوع تبدیل:</b> {conversion_text}\n"
+        f"🔑 <b>کد ووچر:</b>\n<code>{code}</code>\n"
+        "━━━━━━━━━━━━━━━━━━"
+    )
+    
+    try:
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=admin_message,
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        print(f"Error sending message to admin: {e}")
     
     context.user_data.clear()
     return ConversationHandler.END
 
 async def cancel(update: Update, context):
-    await update.message.reply_text("عملیات لغو شد.")
+    await update.message.reply_text("❌ عملیات لغو شد.")
     context.user_data.clear()
     return ConversationHandler.END
 
