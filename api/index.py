@@ -2,9 +2,15 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram.ext import (
+    Application, CommandHandler, CallbackQueryHandler,
+    ConversationHandler, MessageHandler, filters
+)
 
 TOKEN = os.environ.get("BOT_TOKEN")
+
+# State برای ConversationHandler
+WAITING_FOR_CODE = 1
 
 # --- توابع هندلر ---
 async def start(update: Update, context):
@@ -94,32 +100,134 @@ async def back_to_main(update: Update, context):
         reply_markup=reply_markup
     )
 
-async def button_callback(update: Update, context):
+# --- دکمه دوم: تبدیل ووچر ---
+async def convert_voucher_menu(update: Update, context):
     query = update.callback_query
+    await query.answer()
     
-    if query.data == "buy_voucher":
-        await show_buy_voucher_menu(update, context)
-    elif query.data in ["ps_voucher", "hot_voucher", "u_voucher", "c_voucher"]:
-        await show_insufficient_balance(update, context)
-    elif query.data == "back_to_main":
-        await back_to_main(update, context)
-    elif query.data == "convert_voucher":
-        await query.answer()
-        await query.edit_message_text("🔄 شما گزینه «تبدیل ووچر» را انتخاب کردید.\n\n(اینجا می‌توانید اطلاعات بیشتر را نمایش دهید)")
-    elif query.data == "add_balance":
-        await query.answer()
-        await query.edit_message_text("💰 شما گزینه «افزایش موجودی» را انتخاب کردید.\n\n(اینجا می‌توانید اطلاعات بیشتر را نمایش دهید)")
-    elif query.data == "withdraw_balance":
-        await query.answer()
-        await query.edit_message_text("💸 شما گزینه «برداشت موجودی» را انتخاب کردید.\n\n(اینجا می‌توانید اطلاعات بیشتر را نمایش دهید)")
-    elif query.data == "invite_friends":
-        await query.answer()
-        await query.edit_message_text("👥 شما گزینه «دعوت دوستان» را انتخاب کردید.\n\n(اینجا می‌توانید لینک دعوت را نمایش دهید)")
+    keyboard = [
+        [InlineKeyboardButton("🔄 تبدیل یووچر به هات ووچر", callback_data="u_to_hot")],
+        [InlineKeyboardButton("🔄 تبدیل یووچر به پی اس ووچر", callback_data="u_to_ps")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "🔄 *تبدیل ووچر*\n\nنوع تبدیل مد نظر را انتخاب نمایید:",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+    return ConversationHandler.END
+
+async def u_to_hot(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_convert")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "🔄 *تبدیل یووچر به هات ووچر*\n\n"
+        "موجودی هات ووچر ربات:\n"
+        "248.000 دلار\n\n"
+        "تبدیل شما در کمتر از چند دقیقه انجام میشود\n"
+        "کد یووچر خود را وارد نمایید:",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+    
+    context.user_data['conversion_type'] = 'u_to_hot'
+    return WAITING_FOR_CODE
+
+async def u_to_ps(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_convert")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "🔄 *تبدیل یووچر به پی اس ووچر*\n\n"
+        "موجودی پی اس ووچر ربات:\n"
+        "187.000 دلار\n\n"
+        "تبدیل شما در کمتر از چند دقیقه انجام میشود\n"
+        "کد یووچر خود را وارد نمایید:",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+    
+    context.user_data['conversion_type'] = 'u_to_ps'
+    return WAITING_FOR_CODE
+
+async def back_to_convert(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("🔄 تبدیل یووچر به هات ووچر", callback_data="u_to_hot")],
+        [InlineKeyboardButton("🔄 تبدیل یووچر به پی اس ووچر", callback_data="u_to_ps")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "🔄 *تبدیل ووچر*\n\nنوع تبدیل مد نظر را انتخاب نمایید:",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+    return ConversationHandler.END
+
+async def receive_voucher_code(update: Update, context):
+    code = update.message.text
+    
+    await update.message.reply_text(
+        "✅ *درخواست بررسی کد ووچر شما انجام شد.*\n\n"
+        "پس از بررسی صحت کد یووچر تبدیل شما انجام خواهد شد",
+        parse_mode="Markdown"
+    )
+    
+    context.user_data.clear()
+    return ConversationHandler.END
+
+async def cancel(update: Update, context):
+    await update.message.reply_text("عملیات لغو شد.")
+    context.user_data.clear()
+    return ConversationHandler.END
 
 # --- ساخت شیء ربات ---
 ptb = Application.builder().token(TOKEN).updater(None).build()
+
+# ConversationHandler برای مدیریت فرآیند تبدیل ووچر
+conv_handler = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(u_to_hot, pattern="^u_to_hot$"),
+        CallbackQueryHandler(u_to_ps, pattern="^u_to_ps$"),
+    ],
+    states={
+        WAITING_FOR_CODE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, receive_voucher_code)
+        ],
+    },
+    fallbacks=[
+        CallbackQueryHandler(back_to_convert, pattern="^back_to_convert$"),
+        CommandHandler("cancel", cancel),
+    ],
+)
+
 ptb.add_handler(CommandHandler("start", start))
-ptb.add_handler(CallbackQueryHandler(button_callback))
+ptb.add_handler(conv_handler)
+ptb.add_handler(CallbackQueryHandler(show_buy_voucher_menu, pattern="^buy_voucher$"))
+ptb.add_handler(CallbackQueryHandler(convert_voucher_menu, pattern="^convert_voucher$"))
+ptb.add_handler(CallbackQueryHandler(back_to_main, pattern="^back_to_main$"))
+ptb.add_handler(CallbackQueryHandler(show_insufficient_balance, pattern="^(ps_voucher|hot_voucher|u_voucher|c_voucher)$"))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
