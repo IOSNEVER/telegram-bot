@@ -78,6 +78,7 @@ def mark_user_rewarded(user_id):
 # --- هندلرها ---
 async def start(update: Update, context):
     user = update.effective_user
+    user_name = user.first_name  # دریافت نام کاربر
     
     if context.args and len(context.args) > 0:
         if context.args[0].startswith("ref_"):
@@ -157,9 +158,11 @@ async def start(update: Update, context):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
+    # ✅ پیام خوش‌آمدگویی جدید با نام کاربر
     await update.message.reply_text(
-        "✨ <b>سلام! خوش اومدی به ربات ما</b> ✨\n\n"
-        "🤖 لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
+        f"سلام خوش اومدی <b>{user_name}</b> عزیز ❤️\n"
+        "روی دکمه مورد نظر خود کلیک کنید 👇\n\n"
+        "به تبلیغات تلگرام در ربات ما توجه نکنید ⛔",
         reply_markup=reply_markup,
         parse_mode="HTML"
     )
@@ -217,8 +220,9 @@ async def back_to_main(update: Update, context):
     ]
     
     await query.edit_message_text(
-        "✨ <b>سلام! خوش اومدی به ربات ما</b> ✨\n\n"
-        "🤖 لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
+        f"سلام خوش اومدی <b>{update.effective_user.first_name}</b> عزیز ❤️\n"
+        "روی دکمه مورد نظر خود کلیک کنید 👇\n\n"
+        "به تبلیغات تلگرام در ربات ما توجه نکنید ⛔",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML"
     )
@@ -479,9 +483,6 @@ async def show_withdraw_insufficient_balance(update: Update, context):
     query = update.callback_query
     await query.answer("❌ موجودی کیف پول شما 0 تومان است", show_alert=True)
 
-# ==========================================
-# ✅ بخش اصلاح شده: منوی دعوت از دوستان
-# ==========================================
 async def invite_friends_menu(update: Update, context):
     query = update.callback_query
     await query.answer()
@@ -507,7 +508,6 @@ async def invite_friends_menu(update: Update, context):
     else:
         reward_status = f"🎯 {REFERRAL_REQUIRED - invited_count} نفر تا پاداش"
     
-    # متن آماده‌ی اشتراک‌گذاری
     share_text = (
         "💎 اولین ربات تبدیل و فروش ووچر به صورت ریالی\n\n"
         "✅ تبدیل ووچر به ارز دیجیتال\n"
