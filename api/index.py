@@ -6,16 +6,147 @@ from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     ConversationHandler, MessageHandler, filters
 )
+from supabase import create_client, Client
 
 TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_ID = 7438564292  # آیدی عددی ادمین
+ADMIN_ID = 7438564292
 
-# State برای ConversationHandler
+# تنظیمات Supabase
+SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
 WAITING_FOR_CODE = 1
 WAITING_FOR_INCREASE_CODE = 2
 
-# --- توابع هندلر ---
+REFERRAL_REWARD = 200
+REFERRAL_REQUIRED = 5
+
+# --- توابع کمکی Supabase ---
+def get_user_data(user_id):
+    if not supabase:
+        return None
+    try:
+        result = supabase.table("referrals").select("*").eq("user_id", user_id).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error getting user data: {e}")
+        return None
+
+def create_user(user_id, referred_by=None):
+    if not supabase:
+        return
+    try:
+        supabase.table("referrals").insert({
+            "user_id": user_id,
+            "referred_by": referred_by,
+            "invited_list": [],
+            "is_rewarded": False
+        }).execute()
+    except Exception as e:
+        print(f"Error creating user: {e}")
+
+def add_invited_user(referrer_id, invited_id):
+    if not supabase:
+        return
+    try:
+        user_data = get_user_data(referrer_id)
+        if not user_data:
+            create_user(referrer_id)
+            user_data = get_user_data(referrer_id)
+        
+        invited_list = user_data.get("invited_list", [])
+        if invited_id not in invited_list:
+            invited_list.append(invited_id)
+            supabase.table("referrals").update({
+                "invited_list": invited_list
+            }).eq("user_id", referrer_id).execute()
+    except Exception as e:
+        print(f"Error adding invited user: {e}")
+
+def mark_user_rewarded(user_id):
+    if not supabase:
+        return
+    try:
+        supabase.table("referrals").update({
+            "is_rewarded": True
+        }).eq("user_id", user_id).execute()
+    except Exception as e:
+        print(f"Error marking user rewarded: {e}")
+
+# --- هندلرها ---
 async def start(update: Update, context):
+    user = update.effective_user
+    
+    if context.args and len(context.args) > 0:
+        if context.args[0].startswith("ref_"):
+            referrer_id = int(context.args[0].replace("ref_", ""))
+            
+            if user.id != referrer_id:
+                user_data = get_user_data(user.id)
+                if not user_data:
+                    create_user(user.id, referrer_id)
+                    add_invited_user(referrer_id, user.id)
+                    
+                    try:
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=(
+                                "🎉 <b>دعوت جدید!</b>\n\n"
+                                "━━━━━━━━━━━━━━━━━━\n"
+                                f"👤 <b>دعوت کننده:</b> <code>{referrer_id}</code>\n"
+                                f"🆕 <b>کاربر جدید:</b> {user.full_name}\n"
+                                f"🆔 <b>آیدی:</b> <code>{user.id}</code>\n"
+                                "━━━━━━━━━━━━━━━━━━"
+                            ),
+                            parse_mode="HTML"
+                        )
+                    except Exception as e:
+                        print(f"Error: {e}")
+                    
+                    referrer_data = get_user_data(referrer_id)
+                    if referrer_data:
+                        invited_count = len(referrer_data.get("invited_list", []))
+                        is_rewarded = referrer_data.get("is_rewarded", False)
+                        
+                        if invited_count >= REFERRAL_REQUIRED and not is_rewarded:
+                            mark_user_rewarded(referrer_id)
+                            
+                            try:
+                                await context.bot.send_message(
+                                    chat_id=referrer_id,
+                                    text=(
+                                        "🎊 <b>تبریک! شما برنده شدید!</b> 🎊\n\n"
+                                        "━━━━━━━━━━━━━━━━━━\n"
+                                        f"✅ شما {REFERRAL_REQUIRED} دوست دعوت کردید!\n"
+                                        f"💰 <b>{REFERRAL_REWARD} تومان هات ووچر</b> به حساب شما واریز شد!\n"
+                                        "━━━━━━━━━━━━━━━━━━"
+                                    ),
+                                    parse_mode="HTML"
+                                )
+                            except Exception as e:
+                                print(f"Error sending reward: {e}")
+                            
+                            try:
+                                await context.bot.send_message(
+                                    chat_id=ADMIN_ID,
+                                    text=(
+                                        "💰 <b>پاداش واریز شد!</b>\n\n"
+                                        "━━━━━━━━━━━━━━━━━━\n"
+                                        f"👤 <b>کاربر:</b> <code>{referrer_id}</code>\n"
+                                        f"💎 <b>مبلغ:</b> {REFERRAL_REWARD} تومان هات ووچر\n"
+                                        "━━━━━━━━━━━━━━━━━━"
+                                    ),
+                                    parse_mode="HTML"
+                                )
+                            except Exception as e:
+                                print(f"Error: {e}")
+    else:
+        user_data = get_user_data(user.id)
+        if not user_data:
+            create_user(user.id)
+    
     keyboard = [
         [InlineKeyboardButton("💳 خرید ووچر", callback_data="buy_voucher")],
         [InlineKeyboardButton("🔄 تبدیل ووچر", callback_data="convert_voucher")],
@@ -110,7 +241,6 @@ async def back_to_main(update: Update, context):
         parse_mode="HTML"
     )
 
-# --- دکمه دوم: تبدیل ووچر ---
 async def convert_voucher_menu(update: Update, context):
     query = update.callback_query
     await query.answer()
@@ -210,7 +340,6 @@ async def receive_voucher_code(update: Update, context):
     user = update.message.from_user
     conversion_type = context.user_data.get('conversion_type', 'unknown')
     
-    # نمایش پیام تأیید به کاربر
     await update.message.reply_text(
         "✅ <b>درخواست بررسی کد ووچر شما انجام شد.</b>\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -219,7 +348,6 @@ async def receive_voucher_code(update: Update, context):
         parse_mode="HTML"
     )
     
-    # ارسال اطلاعات به ادمین
     conversion_text = {
         'u_to_hot': 'یووچر ➡️ هات ووچر',
         'u_to_ps': 'یووچر ➡️ پی اس ووچر'
@@ -242,12 +370,11 @@ async def receive_voucher_code(update: Update, context):
             parse_mode="HTML"
         )
     except Exception as e:
-        print(f"Error sending message to admin: {e}")
+        print(f"Error: {e}")
     
     context.user_data.clear()
     return ConversationHandler.END
 
-# --- دکمه سوم: افزایش موجودی ---
 async def add_balance_menu(update: Update, context):
     query = update.callback_query
     await query.answer()
@@ -389,7 +516,6 @@ async def receive_increase_code(update: Update, context):
     }
     voucher_name = voucher_names.get(increase_type, 'نامشخص')
     
-    # نمایش پیام تأیید به کاربر
     await update.message.reply_text(
         "✅ <b>درخواست افزایش موجودی شما ثبت شد.</b>\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -398,7 +524,6 @@ async def receive_increase_code(update: Update, context):
         parse_mode="HTML"
     )
     
-    # ارسال اطلاعات به ادمین
     admin_message = (
         "🔔 <b>درخواست افزایش موجودی جدید</b>\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -416,12 +541,11 @@ async def receive_increase_code(update: Update, context):
             parse_mode="HTML"
         )
     except Exception as e:
-        print(f"Error sending message to admin: {e}")
+        print(f"Error: {e}")
     
     context.user_data.clear()
     return ConversationHandler.END
 
-# --- دکمه چهارم: برداشت موجودی ---
 async def withdraw_balance_menu(update: Update, context):
     query = update.callback_query
     await query.answer()
@@ -460,6 +584,59 @@ async def show_withdraw_insufficient_balance(update: Update, context):
     query = update.callback_query
     await query.answer("❌ موجودی کیف پول شما 0 تومان است", show_alert=True)
 
+async def invite_friends_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    user = update.effective_user
+    bot_info = await context.bot.get_me()
+    bot_username = bot_info.username
+    
+    user_data = get_user_data(user.id)
+    invited_list = user_data.get("invited_list", []) if user_data else []
+    invited_count = len(invited_list)
+    is_rewarded = user_data.get("is_rewarded", False) if user_data else False
+    
+    referral_link = f"https://t.me/{bot_username}?start=ref_{user.id}"
+    
+    progress = min(invited_count, REFERRAL_REQUIRED)
+    progress_bar = "🟩" * progress + "⬜" * (REFERRAL_REQUIRED - progress)
+    
+    if is_rewarded:
+        reward_status = "✅ دریافت شده"
+    elif invited_count >= REFERRAL_REQUIRED:
+        reward_status = "🎁 آماده دریافت!"
+    else:
+        reward_status = f"🎯 {REFERRAL_REQUIRED - invited_count} نفر تا پاداش"
+    
+    keyboard = [
+        [InlineKeyboardButton("📤 اشتراک‌گذاری لینک", switch_inline_query=f"دعوت از دوستان: {referral_link}")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    message_text = (
+        "👥 <b>دعوت از دوستان</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🔗 <b>لینک اختصاصی شما:</b>\n"
+        f"<code>{referral_link}</code>\n\n"
+        "📊 <b>آمار شما:</b>\n"
+        f"├ 👥 تعداد دعوت‌ها: <b>{invited_count}/{REFERRAL_REQUIRED}</b>\n"
+        f"├ {progress_bar}\n"
+        f"└ 💎 وضعیت پاداش: {reward_status}\n\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        f"🎁 <b>با دعوت {REFERRAL_REQUIRED} دوست، {REFERRAL_REWARD} تومان هات ووچر رایگان بگیرید!</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💡 <i>لینک بالا را برای دوستان خود ارسال کنید</i>"
+    )
+    
+    await query.edit_message_text(
+        message_text,
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+
 async def cancel(update: Update, context):
     await update.message.reply_text("❌ عملیات لغو شد.")
     context.user_data.clear()
@@ -468,7 +645,6 @@ async def cancel(update: Update, context):
 # --- ساخت شیء ربات ---
 ptb = Application.builder().token(TOKEN).updater(None).build()
 
-# ConversationHandler برای تبدیل ووچر
 conv_handler_convert = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(u_to_hot, pattern="^u_to_hot$"),
@@ -485,7 +661,6 @@ conv_handler_convert = ConversationHandler(
     ],
 )
 
-# ConversationHandler برای افزایش موجودی
 conv_handler_increase = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(increase_voucher_menu, pattern="^increase_(u_voucher|ps_voucher|hot_voucher|c_voucher)$"),
@@ -509,6 +684,7 @@ ptb.add_handler(CallbackQueryHandler(show_buy_voucher_menu, pattern="^buy_vouche
 ptb.add_handler(CallbackQueryHandler(convert_voucher_menu, pattern="^convert_voucher$"))
 ptb.add_handler(CallbackQueryHandler(add_balance_menu, pattern="^add_balance$"))
 ptb.add_handler(CallbackQueryHandler(withdraw_balance_menu, pattern="^withdraw_balance$"))
+ptb.add_handler(CallbackQueryHandler(invite_friends_menu, pattern="^invite_friends$"))
 ptb.add_handler(CallbackQueryHandler(back_to_main, pattern="^back_to_main$"))
 ptb.add_handler(CallbackQueryHandler(show_insufficient_balance, pattern="^(ps_voucher|hot_voucher|u_voucher|c_voucher)$"))
 ptb.add_handler(CallbackQueryHandler(show_withdraw_insufficient_balance, pattern="^withdraw_(ps_voucher|hot_voucher|c_voucher|u_voucher|ton|tron|tether|rial)$"))
