@@ -421,6 +421,45 @@ async def receive_increase_code(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+# --- دکمه چهارم: برداشت موجودی ---
+async def withdraw_balance_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [
+            InlineKeyboardButton("🎮 پی اس ووچر", callback_data="withdraw_ps_voucher"),
+            InlineKeyboardButton("🔥 هات ووچر", callback_data="withdraw_hot_voucher")
+        ],
+        [
+            InlineKeyboardButton("💠 سی ووچر", callback_data="withdraw_c_voucher"),
+            InlineKeyboardButton("💎 یو ووچر", callback_data="withdraw_u_voucher")
+        ],
+        [
+            InlineKeyboardButton("💎 تون", callback_data="withdraw_ton"),
+            InlineKeyboardButton("🔺 ترون", callback_data="withdraw_tron"),
+            InlineKeyboardButton("💵 تتر", callback_data="withdraw_tether")
+        ],
+        [InlineKeyboardButton("💳 برداشت ریالی", callback_data="withdraw_rial")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "💸 <b>برداشت موجودی</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>موجودی کیف پول شما:</b> <code>0 تومان</code>\n\n"
+        "📋 <i>ارز مد نظر خود را جهت برداشت از کیف پول انتخاب کنید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+
+async def show_withdraw_insufficient_balance(update: Update, context):
+    query = update.callback_query
+    await query.answer("❌ موجودی کیف پول شما 0 تومان است", show_alert=True)
+
 async def cancel(update: Update, context):
     await update.message.reply_text("❌ عملیات لغو شد.")
     context.user_data.clear()
@@ -469,8 +508,10 @@ ptb.add_handler(conv_handler_increase)
 ptb.add_handler(CallbackQueryHandler(show_buy_voucher_menu, pattern="^buy_voucher$"))
 ptb.add_handler(CallbackQueryHandler(convert_voucher_menu, pattern="^convert_voucher$"))
 ptb.add_handler(CallbackQueryHandler(add_balance_menu, pattern="^add_balance$"))
+ptb.add_handler(CallbackQueryHandler(withdraw_balance_menu, pattern="^withdraw_balance$"))
 ptb.add_handler(CallbackQueryHandler(back_to_main, pattern="^back_to_main$"))
 ptb.add_handler(CallbackQueryHandler(show_insufficient_balance, pattern="^(ps_voucher|hot_voucher|u_voucher|c_voucher)$"))
+ptb.add_handler(CallbackQueryHandler(show_withdraw_insufficient_balance, pattern="^withdraw_(ps_voucher|hot_voucher|c_voucher|u_voucher|ton|tron|tether|rial)$"))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
