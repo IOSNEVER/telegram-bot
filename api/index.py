@@ -12,6 +12,7 @@ ADMIN_ID = 7438564292  # آیدی عددی ادمین
 
 # State برای ConversationHandler
 WAITING_FOR_CODE = 1
+WAITING_FOR_INCREASE_CODE = 2
 
 # --- توابع هندلر ---
 async def start(update: Update, context):
@@ -246,6 +247,180 @@ async def receive_voucher_code(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+# --- دکمه سوم: افزایش موجودی ---
+async def add_balance_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [
+            InlineKeyboardButton("💎 یوووچر", callback_data="increase_u_voucher"),
+            InlineKeyboardButton("🎮 پی اس ووچر", callback_data="increase_ps_voucher")
+        ],
+        [
+            InlineKeyboardButton("🔥 هات ووچر", callback_data="increase_hot_voucher"),
+            InlineKeyboardButton("💠 سی ووچر", callback_data="increase_c_voucher")
+        ],
+        [
+            InlineKeyboardButton("💎 تون", callback_data="increase_ton"),
+            InlineKeyboardButton("🔺 ترون", callback_data="increase_tron"),
+            InlineKeyboardButton("💵 تتر", callback_data="increase_tether")
+        ],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "💰 <b>افزایش موجودی</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "📋 <i>روش افزایش موجودی را انتخاب کنید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+    return ConversationHandler.END
+
+async def increase_voucher_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    voucher_type = query.data.replace('increase_', '')
+    voucher_names = {
+        'u_voucher': 'یوووچر',
+        'ps_voucher': 'پی اس ووچر',
+        'hot_voucher': 'هات ووچر',
+        'c_voucher': 'سی ووچر'
+    }
+    voucher_name = voucher_names.get(voucher_type, 'نامشخص')
+    
+    keyboard = [
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_add_balance")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        f"💰 <b>افزایش موجودی با {voucher_name}</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💵 <i>افزایش موجودی شما به نرخ دلار روز انجام میشود</i>\n\n"
+        f"🔑 <b>کد {voucher_name} خود را وارد نمایید:</b>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+    
+    context.user_data['increase_type'] = voucher_type
+    return WAITING_FOR_INCREASE_CODE
+
+async def increase_crypto_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    crypto_type = query.data.replace('increase_', '')
+    crypto_names = {
+        'ton': 'تون',
+        'tron': 'ترون',
+        'tether': 'تتر'
+    }
+    crypto_name = crypto_names.get(crypto_type, 'نامشخص')
+    
+    keyboard = [
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_add_balance")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        f"💰 <b>افزایش موجودی با {crypto_name}</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"📞 <i>برای افزایش موجودی از طریق {crypto_name} به پشتیبانی پیام بدهید</i>\n\n"
+        "🆔 <b>آیدی پشتیبانی:</b>\n"
+        "<code>آیدی پشتیبانی اینجا قرار می‌گیرد</code>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+    return ConversationHandler.END
+
+async def back_to_add_balance(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [
+            InlineKeyboardButton("💎 یوووچر", callback_data="increase_u_voucher"),
+            InlineKeyboardButton("🎮 پی اس ووچر", callback_data="increase_ps_voucher")
+        ],
+        [
+            InlineKeyboardButton("🔥 هات ووچر", callback_data="increase_hot_voucher"),
+            InlineKeyboardButton("💠 سی ووچر", callback_data="increase_c_voucher")
+        ],
+        [
+            InlineKeyboardButton("💎 تون", callback_data="increase_ton"),
+            InlineKeyboardButton("🔺 ترون", callback_data="increase_tron"),
+            InlineKeyboardButton("💵 تتر", callback_data="increase_tether")
+        ],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "💰 <b>افزایش موجودی</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "📋 <i>روش افزایش موجودی را انتخاب کنید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+    return ConversationHandler.END
+
+async def receive_increase_code(update: Update, context):
+    code = update.message.text
+    user = update.message.from_user
+    increase_type = context.user_data.get('increase_type', 'unknown')
+    
+    voucher_names = {
+        'u_voucher': 'یوووچر',
+        'ps_voucher': 'پی اس ووچر',
+        'hot_voucher': 'هات ووچر',
+        'c_voucher': 'سی ووچر'
+    }
+    voucher_name = voucher_names.get(increase_type, 'نامشخص')
+    
+    # نمایش پیام تأیید به کاربر
+    await update.message.reply_text(
+        "✅ <b>درخواست افزایش موجودی شما ثبت شد.</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "⏳ <i>پس از بررسی صحت کد، مبلغ به کیف پول شما واریز میشود</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        parse_mode="HTML"
+    )
+    
+    # ارسال اطلاعات به ادمین
+    admin_message = (
+        "🔔 <b>درخواست افزایش موجودی جدید</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>کاربر:</b> {user.full_name}\n"
+        f"🆔 <b>آیدی عددی:</b> <code>{user.id}</code>\n"
+        f"💎 <b>نوع ووچر:</b> {voucher_name}\n"
+        f"🔑 <b>کد ووچر:</b>\n<code>{code}</code>\n"
+        "━━━━━━━━━━━━━━━━━━"
+    )
+    
+    try:
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=admin_message,
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        print(f"Error sending message to admin: {e}")
+    
+    context.user_data.clear()
+    return ConversationHandler.END
+
 async def cancel(update: Update, context):
     await update.message.reply_text("❌ عملیات لغو شد.")
     context.user_data.clear()
@@ -254,8 +429,8 @@ async def cancel(update: Update, context):
 # --- ساخت شیء ربات ---
 ptb = Application.builder().token(TOKEN).updater(None).build()
 
-# ConversationHandler برای مدیریت فرآیند تبدیل ووچر
-conv_handler = ConversationHandler(
+# ConversationHandler برای تبدیل ووچر
+conv_handler_convert = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(u_to_hot, pattern="^u_to_hot$"),
         CallbackQueryHandler(u_to_ps, pattern="^u_to_ps$"),
@@ -271,10 +446,29 @@ conv_handler = ConversationHandler(
     ],
 )
 
+# ConversationHandler برای افزایش موجودی
+conv_handler_increase = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(increase_voucher_menu, pattern="^increase_(u_voucher|ps_voucher|hot_voucher|c_voucher)$"),
+        CallbackQueryHandler(increase_crypto_menu, pattern="^increase_(ton|tron|tether)$"),
+    ],
+    states={
+        WAITING_FOR_INCREASE_CODE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, receive_increase_code)
+        ],
+    },
+    fallbacks=[
+        CallbackQueryHandler(back_to_add_balance, pattern="^back_to_add_balance$"),
+        CommandHandler("cancel", cancel),
+    ],
+)
+
 ptb.add_handler(CommandHandler("start", start))
-ptb.add_handler(conv_handler)
+ptb.add_handler(conv_handler_convert)
+ptb.add_handler(conv_handler_increase)
 ptb.add_handler(CallbackQueryHandler(show_buy_voucher_menu, pattern="^buy_voucher$"))
 ptb.add_handler(CallbackQueryHandler(convert_voucher_menu, pattern="^convert_voucher$"))
+ptb.add_handler(CallbackQueryHandler(add_balance_menu, pattern="^add_balance$"))
 ptb.add_handler(CallbackQueryHandler(back_to_main, pattern="^back_to_main$"))
 ptb.add_handler(CallbackQueryHandler(show_insufficient_balance, pattern="^(ps_voucher|hot_voucher|u_voucher|c_voucher)$"))
 
