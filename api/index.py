@@ -234,6 +234,8 @@ async def convert_voucher_menu(update: Update, context):
     keyboard = [
         [InlineKeyboardButton("🔄 تبدیل یووچر به هات ووچر", callback_data="u_to_hot")],
         [InlineKeyboardButton("🔄 تبدیل یووچر به پی اس ووچر", callback_data="u_to_ps")],
+        [InlineKeyboardButton("🔥 تبدیل هات ووچر به پرمیوم ووچر", callback_data="hot_to_premium")],
+        [InlineKeyboardButton("💎 تبدیل پرمیوم ووچر به هات ووچر", callback_data="premium_to_hot")],
         [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
     ]
     
