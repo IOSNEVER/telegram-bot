@@ -440,7 +440,7 @@ async def increase_crypto_menu(update: Update, context):
         "━━━━━━━━━━━━━━━━━━\n"
         f"📞 <i>برای افزایش موجودی از طریق {crypto_name} به پشتیبانی پیام بدهید:</i>\n\n"
         "🆔 <b>آیدی پشتیبانی:</b>\n"
-        "<code>@supp_win</code>\n" # ✅ آیدی پشتیبانی ست شد
+        "@supp_win\n" # ✅ آیدی پشتیبانی ست شد
         "━━━━━━━━━━━━━━━━━━",
         reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML"
     )
