@@ -78,7 +78,7 @@ def mark_user_rewarded(user_id):
 # --- هندلرها ---
 async def start(update: Update, context):
     user = update.effective_user
-    user_name = user.first_name
+    user_name = user.first_name  # دریافت نام کاربر
     
     if context.args and len(context.args) > 0:
         if context.args[0].startswith("ref_"):
@@ -158,6 +158,7 @@ async def start(update: Update, context):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
+    # ✅ پیام خوش‌آمدگویی جدید با نام کاربر
     await update.message.reply_text(
         f"سلام خوش اومدی <b>{user_name}</b> عزیز ❤️\n"
         "روی دکمه مورد نظر خود کلیک کنید 👇\n\n"
@@ -233,8 +234,6 @@ async def convert_voucher_menu(update: Update, context):
     keyboard = [
         [InlineKeyboardButton("🔄 تبدیل یووچر به هات ووچر", callback_data="u_to_hot")],
         [InlineKeyboardButton("🔄 تبدیل یووچر به پی اس ووچر", callback_data="u_to_ps")],
-        [InlineKeyboardButton("🔥 تبدیل هات ووچر به پرمیوم ووچر", callback_data="hot_to_premium")],
-        [InlineKeyboardButton("💎 تبدیل پرمیوم ووچر به هات ووچر", callback_data="premium_to_hot")],
         [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
     ]
     
@@ -286,44 +285,6 @@ async def u_to_ps(update: Update, context):
     context.user_data['conversion_type'] = 'u_to_ps'
     return WAITING_FOR_CODE
 
-async def hot_to_premium(update: Update, context):
-    query = update.callback_query
-    await query.answer()
-    
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_convert")]]
-    
-    await query.edit_message_text(
-        "🔄 <b>تبدیل هات ووچر به پرمیوم ووچر</b>\n\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "💰 <b>موجودی پرمیوم ووچر ربات:</b>\n<code>150.000 دلار</code>\n\n"
-        "⚡ <i>تبدیل شما در کمتر از چند دقیقه انجام میشود</i>\n\n"
-        "🔑 <b>کد هات ووچر خود را وارد نمایید:</b>\n"
-        "━━━━━━━━━━━━━━━━━━",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="HTML"
-    )
-    context.user_data['conversion_type'] = 'hot_to_premium'
-    return WAITING_FOR_CODE
-
-async def premium_to_hot(update: Update, context):
-    query = update.callback_query
-    await query.answer()
-    
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_convert")]]
-    
-    await query.edit_message_text(
-        "🔄 <b>تبدیل پرمیوم ووچر به هات ووچر</b>\n\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "💰 <b>موجودی هات ووچر ربات:</b>\n<code>248.000 دلار</code>\n\n"
-        "⚡ <i>تبدیل شما در کمتر از چند دقیقه انجام میشود</i>\n\n"
-        "🔑 <b>کد پرمیوم ووچر خود را وارد نمایید:</b>\n"
-        "━━━━━━━━━━━━━━━━━━",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="HTML"
-    )
-    context.user_data['conversion_type'] = 'premium_to_hot'
-    return WAITING_FOR_CODE
-
 async def back_to_convert(update: Update, context):
     query = update.callback_query
     await query.answer()
@@ -331,8 +292,6 @@ async def back_to_convert(update: Update, context):
     keyboard = [
         [InlineKeyboardButton("🔄 تبدیل یووچر به هات ووچر", callback_data="u_to_hot")],
         [InlineKeyboardButton("🔄 تبدیل یووچر به پی اس ووچر", callback_data="u_to_ps")],
-        [InlineKeyboardButton("🔥 تبدیل هات ووچر به پرمیوم ووچر", callback_data="hot_to_premium")],
-        [InlineKeyboardButton("💎 تبدیل پرمیوم ووچر به هات ووچر", callback_data="premium_to_hot")],
         [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
     ]
     
@@ -359,12 +318,7 @@ async def receive_voucher_code(update: Update, context):
         parse_mode="HTML"
     )
     
-    conversion_text = {
-        'u_to_hot': 'یووچر ➡️ هات ووچر',
-        'u_to_ps': 'یووچر ➡️ پی اس ووچر',
-        'hot_to_premium': 'هات ووچر ➡️ پرمیوم ووچر',
-        'premium_to_hot': 'پرمیوم ووچر ➡️ هات ووچر'
-    }.get(conversion_type, 'نامشخص')
+    conversion_text = {'u_to_hot': 'یووچر ➡️ هات ووچر', 'u_to_ps': 'یووچر ➡️ پی اس ووچر'}.get(conversion_type, 'نامشخص')
     
     admin_message = (
         "🔔 <b>درخواست تبدیل ووچر جدید</b>\n\n"
@@ -392,7 +346,6 @@ async def add_balance_menu(update: Update, context):
         [InlineKeyboardButton("💎 یوووچر", callback_data="increase_u_voucher"), InlineKeyboardButton("🎮 پی اس ووچر", callback_data="increase_ps_voucher")],
         [InlineKeyboardButton("🔥 هات ووچر", callback_data="increase_hot_voucher"), InlineKeyboardButton("💠 سی ووچر", callback_data="increase_c_voucher")],
         [InlineKeyboardButton("💎 تون", callback_data="increase_ton"), InlineKeyboardButton("🔺 ترون", callback_data="increase_tron"), InlineKeyboardButton("💵 تتر", callback_data="increase_tether")],
-        [InlineKeyboardButton("💳 ریالی", callback_data="increase_rial")],
         [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
     ]
     
@@ -442,24 +395,7 @@ async def increase_crypto_menu(update: Update, context):
         f"💰 <b>افزایش موجودی با {crypto_name}</b>\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         f"📞 <i>برای افزایش موجودی از طریق {crypto_name} به پشتیبانی پیام بدهید</i>\n\n"
-        "🆔 <b>آیدی پشتیبانی:</b>\n<code>@supp_win</code>\n"
-        "━━━━━━━━━━━━━━━━━━",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="HTML"
-    )
-    return ConversationHandler.END
-
-async def increase_rial_menu(update: Update, context):
-    query = update.callback_query
-    await query.answer()
-    
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_add_balance")]]
-    
-    await query.edit_message_text(
-        "💳 <b>افزایش موجودی ریالی</b>\n\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "📞 <i>برای افزایش موجودی از طریق ریالی به پشتیبانی پیام بدهید</i>\n\n"
-        "🆔 <b>آیدی پشتیبانی:</b>\n<code>@supp_win</code>\n"
+        "🆔 <b>آیدی پشتیبانی:</b>\n<code>آیدی پشتیبانی اینجا قرار می‌گیرد</code>\n"
         "━━━━━━━━━━━━━━━━━━",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML"
@@ -469,3 +405,207 @@ async def increase_rial_menu(update: Update, context):
 async def back_to_add_balance(update: Update, context):
     query = update.callback_query
     await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("💎 یوووچر", callback_data="increase_u_voucher"), InlineKeyboardButton("🎮 پی اس ووچر", callback_data="increase_ps_voucher")],
+        [InlineKeyboardButton("🔥 هات ووچر", callback_data="increase_hot_voucher"), InlineKeyboardButton("💠 سی ووچر", callback_data="increase_c_voucher")],
+        [InlineKeyboardButton("💎 تون", callback_data="increase_ton"), InlineKeyboardButton("🔺 ترون", callback_data="increase_tron"), InlineKeyboardButton("💵 تتر", callback_data="increase_tether")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    await query.edit_message_text(
+        "💰 <b>افزایش موجودی</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "📋 <i>روش افزایش موجودی را انتخاب کنید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
+    return ConversationHandler.END
+
+async def receive_increase_code(update: Update, context):
+    code = update.message.text
+    user = update.message.from_user
+    increase_type = context.user_data.get('increase_type', 'unknown')
+    
+    voucher_names = {'u_voucher': 'یوووچر', 'ps_voucher': 'پی اس ووچر', 'hot_voucher': 'هات ووچر', 'c_voucher': 'سی ووچر'}
+    voucher_name = voucher_names.get(increase_type, 'نامشخص')
+    
+    await update.message.reply_text(
+        "✅ <b>درخواست افزایش موجودی شما ثبت شد.</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "⏳ <i>پس از بررسی صحت کد، مبلغ به کیف پول شما واریز میشود</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        parse_mode="HTML"
+    )
+    
+    admin_message = (
+        "🔔 <b>درخواست افزایش موجودی جدید</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>کاربر:</b> {user.full_name}\n"
+        f"🆔 <b>آیدی عددی:</b> <code>{user.id}</code>\n"
+        f"💎 <b>نوع ووچر:</b> {voucher_name}\n"
+        f"🔑 <b>کد ووچر:</b>\n<code>{code}</code>\n"
+        "━━━━━━━━━━━━━━━━━━"
+    )
+    
+    try:
+        await context.bot.send_message(chat_id=ADMIN_ID, text=admin_message, parse_mode="HTML")
+    except Exception as e:
+        print(f"Error: {e}")
+    
+    context.user_data.clear()
+    return ConversationHandler.END
+
+async def withdraw_balance_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("🎮 پی اس ووچر", callback_data="withdraw_ps_voucher"), InlineKeyboardButton("🔥 هات ووچر", callback_data="withdraw_hot_voucher")],
+        [InlineKeyboardButton("💠 سی ووچر", callback_data="withdraw_c_voucher"), InlineKeyboardButton("💎 یو ووچر", callback_data="withdraw_u_voucher")],
+        [InlineKeyboardButton("💎 تون", callback_data="withdraw_ton"), InlineKeyboardButton("🔺 ترون", callback_data="withdraw_tron"), InlineKeyboardButton("💵 تتر", callback_data="withdraw_tether")],
+        [InlineKeyboardButton("💳 برداشت ریالی", callback_data="withdraw_rial")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    await query.edit_message_text(
+        "💸 <b>برداشت موجودی</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>موجودی کیف پول شما:</b> <code>0 تومان</code>\n\n"
+        "📋 <i>ارز مد نظر خود را جهت برداشت از کیف پول انتخاب کنید:</i>\n"
+        "━━━━━━━━━━━━━━━━━━",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
+
+async def show_withdraw_insufficient_balance(update: Update, context):
+    query = update.callback_query
+    await query.answer("❌ موجودی کیف پول شما 0 تومان است", show_alert=True)
+
+async def invite_friends_menu(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    user = update.effective_user
+    bot_info = await context.bot.get_me()
+    bot_username = bot_info.username
+    
+    user_data = get_user_data(user.id)
+    invited_list = user_data.get("invited_list", []) if user_data else []
+    invited_count = len(invited_list)
+    is_rewarded = user_data.get("is_rewarded", False) if user_data else False
+    
+    referral_link = f"https://t.me/{bot_username}?start=ref_{user.id}"
+    
+    progress = min(invited_count, REFERRAL_REQUIRED)
+    progress_bar = "🟩" * progress + "⬜" * (REFERRAL_REQUIRED - progress)
+    
+    if is_rewarded:
+        reward_status = "✅ دریافت شده"
+    elif invited_count >= REFERRAL_REQUIRED:
+        reward_status = "🎁 آماده دریافت!"
+    else:
+        reward_status = f"🎯 {REFERRAL_REQUIRED - invited_count} نفر تا پاداش"
+    
+    share_text = (
+        "💎 اولین ربات تبدیل و فروش ووچر به صورت ریالی\n\n"
+        "✅ تبدیل ووچر به ارز دیجیتال\n"
+        "✅ برداشت موجودی به صورت ارز دیجیتال و ریالی، کاملاً معتبر\n"
+        "✅ پشتیبانی ۲۴ ساعته\n\n"
+        "🎁 ۵ نفر از دوستاتو دعوت کن و ۲۰۰ هزار تومان ووچر بگیر (من دریافت کردم! 😍)\n\n"
+        f"👇 همین الان شروع کن:\n{referral_link}"
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("📤 اشتراک‌گذاری لینک", switch_inline_query=share_text)],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")]
+    ]
+    
+    message_text = (
+        "👥 <b>دعوت از دوستان</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🔗 <b>لینک اختصاصی شما:</b>\n"
+        f"<code>{referral_link}</code>\n\n"
+        "📊 <b>آمار شما:</b>\n"
+        f"├ 👥 تعداد دعوت‌ها: <b>{invited_count}/{REFERRAL_REQUIRED}</b>\n"
+        f"├ {progress_bar}\n"
+        f"└ 💎 وضعیت پاداش: {reward_status}\n\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        f"🎁 <b>با دعوت {REFERRAL_REQUIRED} دوست، {REFERRAL_REWARD} تومان هات ووچر رایگان بگیرید!</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💡 <i>روی دکمه اشتراک‌گذاری بزنید و برای دوستان خود ارسال کنید</i>"
+    )
+    
+    await query.edit_message_text(
+        message_text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
+
+async def cancel(update: Update, context):
+    await update.message.reply_text("❌ عملیات لغو شد.")
+    context.user_data.clear()
+    return ConversationHandler.END
+
+# --- ساخت شیء ربات ---
+ptb = Application.builder().token(TOKEN).updater(None).build()
+
+conv_handler_convert = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(u_to_hot, pattern="^u_to_hot$"),
+        CallbackQueryHandler(u_to_ps, pattern="^u_to_ps$"),
+    ],
+    states={
+        WAITING_FOR_CODE: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_voucher_code)],
+    },
+    fallbacks=[
+        CallbackQueryHandler(back_to_convert, pattern="^back_to_convert$"),
+        CommandHandler("cancel", cancel),
+    ],
+)
+
+conv_handler_increase = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(increase_voucher_menu, pattern="^increase_(u_voucher|ps_voucher|hot_voucher|c_voucher)$"),
+        CallbackQueryHandler(increase_crypto_menu, pattern="^increase_(ton|tron|tether)$"),
+    ],
+    states={
+        WAITING_FOR_INCREASE_CODE: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_increase_code)],
+    },
+    fallbacks=[
+        CallbackQueryHandler(back_to_add_balance, pattern="^back_to_add_balance$"),
+        CommandHandler("cancel", cancel),
+    ],
+)
+
+ptb.add_handler(CommandHandler("start", start))
+ptb.add_handler(conv_handler_convert)
+ptb.add_handler(conv_handler_increase)
+ptb.add_handler(CallbackQueryHandler(show_buy_voucher_menu, pattern="^buy_voucher$"))
+ptb.add_handler(CallbackQueryHandler(convert_voucher_menu, pattern="^convert_voucher$"))
+ptb.add_handler(CallbackQueryHandler(add_balance_menu, pattern="^add_balance$"))
+ptb.add_handler(CallbackQueryHandler(withdraw_balance_menu, pattern="^withdraw_balance$"))
+ptb.add_handler(CallbackQueryHandler(invite_friends_menu, pattern="^invite_friends$"))
+ptb.add_handler(CallbackQueryHandler(back_to_main, pattern="^back_to_main$"))
+ptb.add_handler(CallbackQueryHandler(show_insufficient_balance, pattern="^(ps_voucher|hot_voucher|u_voucher|c_voucher)$"))
+ptb.add_handler(CallbackQueryHandler(show_withdraw_insufficient_balance, pattern="^withdraw_(ps_voucher|hot_voucher|c_voucher|u_voucher|ton|tron|tether|rial)$"))
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await ptb.initialize()
+    yield
+    await ptb.shutdown()
+
+application = FastAPI(lifespan=lifespan)
+
+@application.get("/api")
+async def root():
+    return {"message": "Telegram bot is running successfully!"}
+
+@application.post("/api")
+async def webhook(request: Request):
+    data = await request.json()
+    update = Update.de_json(data, ptb.bot)
+    await ptb.process_update(update)
+    return {"status": "ok"}
