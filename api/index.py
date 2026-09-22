@@ -421,7 +421,7 @@ async def increase_rial_menu(update: Update, context):
         "━━━━━━━━━━━━━━━━━━\n"
         "📞 <i>برای افزایش موجودی ریالی لطفاً به پشتیبانی پیام دهید:</i>\n\n"
         "🆔 <b>آیدی پشتیبانی:</b>\n"
-        "<code>@supp_win</code>\n"
+        "@supp_win\n"
         "━━━━━━━━━━━━━━━━━━",
         reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML"
     )
